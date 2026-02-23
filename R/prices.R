@@ -200,63 +200,57 @@ PriceQuery <- R6::R6Class("PriceQuery",
   )
 )
 
+#' Escape a string for safe embedding in JSON.
+#' @noRd
+json_escape <- function(s) gsub('"', '\\"', s, fixed = TRUE)
+
 #' Parse AllPricesToday JSON, stream-flatten to NDJSON, load into DuckDB.
+#' Uses sprintf for JSON serialization (10-100x faster than jsonlite::toJSON per row).
 #' @noRd
 load_prices_to_duckdb <- function(path, conn) {
-  if (grepl("\\.gz$", path)) {
-    tmp_json <- tempfile(fileext = ".json")
-    gz_in <- gzfile(path, "rb")
-    out_f <- file(tmp_json, "wb")
-    repeat {
-      chunk <- readBin(gz_in, "raw", n = 1048576L)
-      if (length(chunk) == 0L) break
-      writeBin(chunk, out_f)
-    }
-    close(gz_in)
-    close(out_f)
-    raw <- jsonlite::fromJSON(tmp_json, simplifyVector = FALSE, simplifyDataFrame = FALSE)
-    unlink(tmp_json)
-  } else {
-    raw <- jsonlite::fromJSON(path, simplifyVector = FALSE, simplifyDataFrame = FALSE)
-  }
+  dec <- decompress_gz(path)
+  on.exit(if (!is.null(dec$tmp)) unlink(dec$tmp), add = TRUE)
 
+  raw <- jsonlite::fromJSON(dec$path, simplifyVector = FALSE, simplifyDataFrame = FALSE)
   data <- raw[["data"]]
   if (is.null(data)) return(invisible(NULL))
   rm(raw)
 
   tmp <- tempfile(fileext = ".ndjson")
-  on.exit(unlink(tmp), add = TRUE)
-
   tmp_con <- file(tmp, "w")
-  on.exit(close(tmp_con), add = TRUE)
+
+  batch <- character(10000L)
+  batch_idx <- 0L
   count <- 0L
 
   for (uuid in names(data)) {
     formats <- data[[uuid]]
     if (!is.list(formats)) next
-    for (source in names(formats)) {
-      providers <- formats[[source]]
+    for (src in names(formats)) {
+      providers <- formats[[src]]
       if (!is.list(providers)) next
       for (provider in names(providers)) {
         price_data <- providers[[provider]]
         if (!is.list(price_data)) next
-        currency <- price_data[["currency"]] %||% "USD"
-        for (category_name in c("buylist", "retail")) {
-          category_data <- price_data[[category_name]]
-          if (!is.list(category_data)) next
-          for (finish in names(category_data)) {
-            date_prices <- category_data[[finish]]
+        currency <- json_escape(price_data[["currency"]] %||% "USD")
+        for (cat_name in c("buylist", "retail")) {
+          cat_data <- price_data[[cat_name]]
+          if (!is.list(cat_data)) next
+          for (finish in names(cat_data)) {
+            date_prices <- cat_data[[finish]]
             if (!is.list(date_prices)) next
-            for (date in names(date_prices)) {
-              price <- date_prices[[date]]
+            for (dt in names(date_prices)) {
+              price <- date_prices[[dt]]
               if (!is.null(price)) {
-                row <- jsonlite::toJSON(list(
-                  uuid = uuid, source = source, provider = provider,
-                  currency = currency, category = category_name,
-                  finish = finish, date = date, price = as.numeric(price)
-                ), auto_unbox = TRUE)
-                writeLines(row, tmp_con)
-                count <- count + 1L
+                batch_idx <- batch_idx + 1L
+                batch[batch_idx] <- sprintf(
+                  '{"uuid":"%s","source":"%s","provider":"%s","currency":"%s","category":"%s","finish":"%s","date":"%s","price":%s}',
+                  uuid, src, provider, currency, cat_name, finish, dt, as.numeric(price))
+                if (batch_idx >= 10000L) {
+                  writeLines(batch[seq_len(batch_idx)], tmp_con)
+                  count <- count + batch_idx
+                  batch_idx <- 0L
+                }
               }
             }
           }
@@ -264,10 +258,14 @@ load_prices_to_duckdb <- function(path, conn) {
       }
     }
   }
-  close(tmp_con)
-  on.exit(NULL) # remove close from on.exit since we closed manually
 
-  if (count > 0) {
+  if (batch_idx > 0L) {
+    writeLines(batch[seq_len(batch_idx)], tmp_con)
+    count <- count + batch_idx
+  }
+  close(tmp_con)
+
+  if (count > 0L) {
     conn$register_table_from_ndjson("prices_today", tmp)
   }
   unlink(tmp)

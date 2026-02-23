@@ -64,52 +64,47 @@ SkuQuery <- R6::R6Class("SkuQuery",
   )
 )
 
-#' Parse TcgplayerSkus JSON, stream-flatten to NDJSON, load into DuckDB.
+#' Decompress .gz to a temp file and return the path; returns input path if not gz.
+#' Caller must unlink the temp file when done.
+#' @noRd
+decompress_gz <- function(path) {
+  if (!grepl("\\.gz$", path)) return(list(path = path, tmp = NULL))
+  tmp_json <- tempfile(fileext = ".json")
+  gz_in <- gzfile(path, "rb")
+  out_f <- file(tmp_json, "wb")
+  repeat {
+    chunk <- readBin(gz_in, "raw", n = 1048576L)
+    if (length(chunk) == 0L) break
+    writeBin(chunk, out_f)
+  }
+  close(gz_in)
+  close(out_f)
+  list(path = tmp_json, tmp = tmp_json)
+}
+
+#' Load TcgplayerSkus JSON into DuckDB using DuckDB's native JSON reader.
 #' @noRd
 load_skus_to_duckdb <- function(path, conn) {
-  if (grepl("\\.gz$", path)) {
-    tmp_json <- tempfile(fileext = ".json")
-    gz_in <- gzfile(path, "rb")
-    out_f <- file(tmp_json, "wb")
-    repeat {
-      chunk <- readBin(gz_in, "raw", n = 1048576L)
-      if (length(chunk) == 0L) break
-      writeBin(chunk, out_f)
-    }
-    close(gz_in)
-    close(out_f)
-    raw <- jsonlite::fromJSON(tmp_json, simplifyVector = FALSE, simplifyDataFrame = FALSE)
-    unlink(tmp_json)
-  } else {
-    raw <- jsonlite::fromJSON(path, simplifyVector = FALSE, simplifyDataFrame = FALSE)
-  }
+  dec <- decompress_gz(path)
+  on.exit(if (!is.null(dec$tmp)) unlink(dec$tmp), add = TRUE)
+  path_fwd <- forward_slashes(dec$path)
 
-  data <- raw[["data"]]
-  if (is.null(data)) return(invisible(NULL))
-  rm(raw)
-
-  tmp <- tempfile(fileext = ".ndjson")
-  on.exit(unlink(tmp), add = TRUE)
-
-  tmp_con <- file(tmp, "w")
-  count <- 0L
-
-  for (uuid in names(data)) {
-    skus <- data[[uuid]]
-    if (!is.list(skus)) next
-    for (sku in skus) {
-      if (is.list(sku)) {
-        row <- sku
-        row[["uuid"]] <- uuid
-        writeLines(jsonlite::toJSON(row, auto_unbox = TRUE), tmp_con)
-        count <- count + 1L
-      }
-    }
-  }
-  close(tmp_con)
-
-  if (count > 0) {
-    conn$register_table_from_ndjson("tcgplayer_skus", tmp)
-  }
-  unlink(tmp)
+  raw_conn <- conn$raw()
+  tryCatch({
+    DBI::dbExecute(raw_conn, "DROP TABLE IF EXISTS tcgplayer_skus")
+    DBI::dbExecute(raw_conn, sprintf("
+      CREATE TABLE tcgplayer_skus AS
+      WITH entries AS (
+        SELECT unnest(map_entries(data)) AS entry
+        FROM read_json('%s', auto_detect=true, maximum_object_size=1073741824)
+      ),
+      flattened AS (
+        SELECT entry.key AS uuid, unnest(entry.value) AS sku FROM entries
+      )
+      SELECT uuid, sku.* FROM flattened
+    ", path_fwd))
+    conn$registered_views <- c(conn$registered_views, "tcgplayer_skus")
+  }, error = function(e) {
+    warning("Failed to load SKU data: ", conditionMessage(e))
+  })
 }
