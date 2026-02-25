@@ -56,9 +56,12 @@ SetQuery <- R6::R6Class("SetQuery",
     #' @description Get aggregate price statistics for a set.
     get_financial_summary = function(set_code, provider = "tcgplayer",
                                      currency = "USD", finish = "normal",
-                                     category = "retail") {
+                                     price_type = "retail") {
       private$.conn$ensure_views("cards")
-      if (!("prices_today" %in% private$.conn$registered_views)) return(NULL)
+      tryCatch(
+        private$.conn$ensure_views("all_prices_today"),
+        error = function(e) NULL)
+      if (!("all_prices_today" %in% private$.conn$registered_views)) return(NULL)
 
       sql <- "
         SELECT
@@ -69,16 +72,16 @@ SetQuery <- R6::R6Class("SetQuery",
           MAX(p.price) AS max_value,
           MAX(p.date) AS date
         FROM cards c
-        JOIN prices_today p ON c.uuid = p.uuid
+        JOIN all_prices_today p ON c.uuid = p.uuid
         WHERE c.setCode = $1
           AND p.provider = $2
           AND p.currency = $3
           AND p.finish = $4
-          AND p.category = $5
-          AND p.date = (SELECT MAX(p2.date) FROM prices_today p2)
+          AND p.price_type = $5
+          AND p.date = (SELECT MAX(p2.date) FROM all_prices_today p2)
       "
       df <- private$.conn$execute(sql,
-        params = list(toupper(set_code), provider, currency, finish, category))
+        params = list(toupper(set_code), provider, currency, finish, price_type))
       if (nrow(df) == 0 || is.na(df$card_count[1]) || df$card_count[1] == 0)
         return(NULL)
       as.list(df[1, ])

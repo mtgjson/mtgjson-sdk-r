@@ -5,7 +5,7 @@ library(duckdb)
 
 #' Create a test Connection with fixture data pre-loaded.
 #' @return A Connection R6 object with cards, tokens, sets, card_identifiers,
-#'   card_legalities, and prices_today tables.
+#'   card_legalities, and all_prices_today tables.
 #' @noRd
 create_test_connection <- function() {
   cache <- CacheManager$new(cache_dir = tempdir(), offline = TRUE)
@@ -110,16 +110,21 @@ create_test_connection <- function() {
     source   = rep("paper", 5),
     provider = rep("tcgplayer", 5),
     currency = rep("USD", 5),
-    category = rep("retail", 5),
+    price_type = rep("retail", 5),
     finish   = rep("normal", 5),
     date     = c("2024-01-15", "2024-01-14", "2024-01-15",
                  "2024-01-15", "2024-01-15"),
     price    = c(2.50, 2.40, 1.75, 0.50, 15.00),
     stringsAsFactors = FALSE
   )
-  DBI::dbExecute(conn$raw(), "DROP TABLE IF EXISTS prices_today")
-  DBI::dbWriteTable(conn$raw(), "prices_today", prices_df)
-  conn$registered_views <- c(conn$registered_views, "prices_today")
+  DBI::dbExecute(conn$raw(), "DROP TABLE IF EXISTS all_prices_today")
+  DBI::dbWriteTable(conn$raw(), "all_prices_today", prices_df)
+  conn$registered_views <- c(conn$registered_views, "all_prices_today")
+
+  # all_prices (history) fixture — same data as all_prices_today for tests
+  DBI::dbExecute(conn$raw(), "DROP TABLE IF EXISTS all_prices")
+  DBI::dbWriteTable(conn$raw(), "all_prices", prices_df)
+  conn$registered_views <- c(conn$registered_views, "all_prices")
 
   conn
 }

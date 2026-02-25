@@ -23,14 +23,16 @@ PARQUET_FILES <- list(
   set_booster_contents        = "parquet/setBoosterContents.parquet",
   set_booster_sheet_cards     = "parquet/setBoosterSheetCards.parquet",
   set_booster_sheets          = "parquet/setBoosterSheets.parquet",
-  all_printings               = "parquet/AllPrintings.parquet"
+  all_printings               = "parquet/AllPrintings.parquet",
+  # Prices and SKUs
+  all_prices_today            = "parquet/AllPricesToday.parquet",
+  all_prices                  = "parquet/AllPrices.parquet",
+  tcgplayer_skus              = "parquet/TcgplayerSkus.parquet"
 )
 
 #' Mapping of logical data names to CDN JSON file paths.
 #' @noRd
 JSON_FILES <- list(
-  all_prices_today = "AllPricesToday.json.gz",
-  tcgplayer_skus   = "TcgplayerSkus.json.gz",
   keywords         = "Keywords.json",
   card_types       = "CardTypes.json",
   deck_list        = "DeckList.json",
