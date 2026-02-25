@@ -103,7 +103,7 @@ MtgjsonSDK <- R6::R6Class("MtgjsonSDK",
     #' @field prices PriceQuery interface.
     prices = function() {
       if (is.null(private$.prices))
-        private$.prices <- PriceQuery$new(private$.conn, private$.cache)
+        private$.prices <- PriceQuery$new(private$.conn)
       private$.prices
     },
 
@@ -124,7 +124,7 @@ MtgjsonSDK <- R6::R6Class("MtgjsonSDK",
     #' @field skus SkuQuery interface.
     skus = function() {
       if (is.null(private$.skus))
-        private$.skus <- SkuQuery$new(private$.conn, private$.cache)
+        private$.skus <- SkuQuery$new(private$.conn)
       private$.skus
     },
 
