@@ -606,7 +606,7 @@ check("not_legal_in standard", is.data.frame(not_legal), sprintf("found %d", nro
 
 # ============================================================
 #  PRICES -- PriceQuery (7 methods)
-#  Downloads AllPricesToday.json.gz (~large file)
+#  Uses AllPricesToday.parquet via DuckDB view
 # ============================================================
 section("Prices")
 
@@ -641,13 +641,13 @@ tryCatch({
               sprintf("finish=%s", first_fin))
       }
 
-      # today -- with category filter
-      categories <- unique(today_prices$category)
-      if (length(categories) > 0) {
-        first_cat <- categories[1]
-        today_cat <- sdk$prices$today(uuid, category = first_cat)
-        check("prices.today category filter", nrow(today_cat) > 0,
-              sprintf("cat=%s", first_cat))
+      # today -- with price_type filter
+      price_types <- unique(today_prices$price_type)
+      if (length(price_types) > 0) {
+        first_pt <- price_types[1]
+        today_pt <- sdk$prices$today(uuid, price_type = first_pt)
+        check("prices.today price_type filter", nrow(today_pt) > 0,
+              sprintf("price_type=%s", first_pt))
       }
     }
 
@@ -717,7 +717,7 @@ tryCatch({
 # ============================================================
 section("Set Financial Summary (EV calculation)")
 
-if ("prices_today" %in% sdk$views) {
+if ("all_prices_today" %in% sdk$views) {
   fin <- sdk$sets$get_financial_summary("MH3")
   check("get_financial_summary MH3",
         !is.null(fin) && (fin$card_count %||% 0) > 0,
@@ -786,7 +786,7 @@ tryCatch({
 
 # ============================================================
 #  SKUS -- SkuQuery (3 methods)
-#  Downloads TcgplayerSkus.json.gz (~large file)
+#  Uses TcgplayerSkus.parquet via DuckDB view
 # ============================================================
 section("SKUs")
 
