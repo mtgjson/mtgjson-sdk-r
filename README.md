@@ -297,6 +297,21 @@ sdk$sql(query, params)                      # raw parameterized SQL
 sdk$close()                                 # release resources
 ```
 
+## Performance and Memory
+
+When querying large datasets (thousands of cards), the SDK returns standard R data.frames which integrate directly with the tidyverse. For bulk analysis, use raw SQL to let DuckDB handle aggregation natively rather than pulling large result sets into R.
+
+```r
+# Aggregation runs in DuckDB's C++ engine, not R
+result <- sdk$sql("
+  SELECT setCode, COUNT(*) as card_count, AVG(manaValue) as avg_cmc
+  FROM cards
+  GROUP BY setCode
+  ORDER BY card_count DESC
+  LIMIT 10
+")
+```
+
 ## Advanced Usage
 
 ### SqlBuilder
