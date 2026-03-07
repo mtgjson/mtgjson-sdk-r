@@ -8,6 +8,8 @@ Authors@R: c(
 Description: Auto-downloads Parquet data from the MTGJSON CDN and exposes the
     full Magic: The Gathering dataset through R6-based query interfaces backed
     by DuckDB.
+URL: https://mtgjson.com
+BugReports: https://github.com/mtgjson/mtgjson-sdk-r/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

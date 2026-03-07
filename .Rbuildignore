@@ -5,3 +5,5 @@
 ^\.claude$
 ^README\.Rmd$
 ^LICENSE\.txt$
+^run_tests\.R$
+^smoke_test\.R$
