@@ -13,7 +13,7 @@ BugReports: https://github.com/mtgjson/mtgjson-sdk-r/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 Imports:
     R6,
     DBI,
