@@ -1,7 +1,10 @@
 Package: mtgjsonsdk
 Title: DuckDB-Backed Query Client for MTGJSON Card Data
 Version: 0.1.0
-Authors@R: person("Robert", "Pratt", email = "rprat@users.noreply.github.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Zachary", "Halpern", email = "zach@mtgjson.com", role = c("aut", "cre")),
+    person("Robert", "Pratt", email = "rprat@users.noreply.github.com", role = "aut")
+    )
 Description: Auto-downloads Parquet data from the MTGJSON CDN and exposes the
     full Magic: The Gathering dataset through R6-based query interfaces backed
     by DuckDB.
