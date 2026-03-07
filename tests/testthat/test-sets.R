@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("sets$get returns set by code", {
   conn <- create_test_connection()
   on.exit(conn$close())

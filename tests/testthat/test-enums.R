@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("enums$keywords returns keyword lists", {
   cache <- create_test_cache()
   eq <- EnumQuery$new(cache)

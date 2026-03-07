@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("Connection execute returns data.frame", {
   conn <- create_test_connection()
   on.exit(conn$close())

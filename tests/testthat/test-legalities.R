@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("legalities$formats_for_card works", {
   conn <- create_test_connection()
   on.exit(conn$close())

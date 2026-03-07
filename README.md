@@ -1,6 +1,6 @@
 # mtgjsonsdk
 
-A high-performance, DuckDB-backed R query client for [MTGJSON](https://mtgjson.com).
+The official [MTGJSON](https://mtgjson.com) SDK for R — a high-performance, DuckDB-backed query client.
 
 Unlike traditional SDKs that rely on rate-limited REST APIs, `mtgjsonsdk` implements a local data warehouse architecture. It synchronizes optimized Parquet data from the MTGJSON CDN to your local machine, utilizing DuckDB to execute complex analytics, fuzzy searches, and booster simulations with sub-millisecond latency.
 

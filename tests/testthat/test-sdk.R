@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("MtgjsonSDK creates with offline cache", {
   cache <- create_test_cache()
   # Build SDK with the test cache dir

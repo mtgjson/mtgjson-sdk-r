@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("tokens$get_by_uuid works", {
   conn <- create_test_connection()
   on.exit(conn$close())

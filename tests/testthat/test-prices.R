@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("prices$today returns latest prices", {
   conn <- create_test_connection()
   on.exit(conn$close())

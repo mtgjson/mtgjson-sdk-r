@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("cards$get_by_uuid returns one-row df", {
   conn <- create_test_connection()
   on.exit(conn$close())

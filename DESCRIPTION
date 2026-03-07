@@ -10,6 +10,7 @@ Description: Auto-downloads Parquet data from the MTGJSON CDN and exposes the
     by DuckDB.
 URL: https://mtgjson.com
 BugReports: https://github.com/mtgjson/mtgjson-sdk-r/issues
+Depends: R (>= 4.1.0)
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

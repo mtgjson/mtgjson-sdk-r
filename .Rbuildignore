@@ -7,3 +7,4 @@
 ^LICENSE\.txt$
 ^run_tests\.R$
 ^smoke_test\.R$
+^cran-comments\.md$

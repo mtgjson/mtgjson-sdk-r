@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("identifiers$find_by_scryfall_id works", {
   conn <- create_test_connection()
   on.exit(conn$close())

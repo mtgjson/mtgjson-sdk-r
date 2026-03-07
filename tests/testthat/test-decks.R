@@ -1,3 +1,5 @@
+skip_on_cran()
+
 test_that("decks$list returns all decks", {
   cache <- create_test_cache()
   dq <- DeckQuery$new(cache)
